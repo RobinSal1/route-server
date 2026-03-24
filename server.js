@@ -29,11 +29,10 @@ app.get("/autocomplete", async (req, res) => {
   }
 });
 
-// PORT ROUTES
-const routes = [
-  { eu: "Rotterdam", fi: "Helsinki", ferry: 300 },
-  { eu: "Hamburg", fi: "Turku", ferry: 280 }
-];
+
+const routes = require("./routes.json");
+
+
 
 // 🔥 GOOGLE ROUTES API FUNCTION
 async function getRouteData(origin, destination) {

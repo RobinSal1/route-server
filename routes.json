@@ -1,0 +1,47 @@
+[
+  {
+    "eu": "Tallinna",
+    "fi": "Helsinki",
+    "ferry": 450
+  },
+  {
+    "eu": "Gdynia",
+    "fi": "Hanko",
+    "ferry": 680
+  },
+  {
+    "eu": "Travemünde",
+    "fi": "Helsnki",
+    "ferry": 950
+  },
+  {
+    "eu": "Lübeck",
+    "fi": "Hanko",
+    "ferry": 920
+  },
+  {
+    "eu": "Antwerpen",
+    "fi": "Hanko",
+    "ferry": 1200
+  },
+  {
+    "eu": "Santander",
+    "fi": "Hanko",
+    "ferry": 1550
+  },
+  {
+    "eu": "Bilbao",
+    "fi": "Hanko",
+    "ferry": 1550
+  },
+  {
+    "eu": "Stockholm",
+    "fi": "Turku",
+    "ferry": 440
+  },
+  {
+    "eu": "Kapellskär",
+    "fi": "Naatali",
+    "ferry": 420
+  }
+]
