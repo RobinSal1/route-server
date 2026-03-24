@@ -8,24 +8,19 @@ app.use(cors());
 
 const API_KEY = process.env.API_KEY;
 
-// Test route
 app.get("/", (req, res) => {
   res.send("Server works!");
 });
 
-// ✅ AUTOCOMPLETE ENDPOINT
+// AUTOCOMPLETE
 app.get("/autocomplete", async (req, res) => {
   const input = req.query.input;
-
   if (!input) return res.json([]);
 
   try {
     const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&types=(cities)&key=${API_KEY}`;
-
     const response = await fetch(url).then(r => r.json());
-
     const results = response.predictions.map(p => p.description);
-
     res.json(results);
   } catch (err) {
     console.log(err);
@@ -33,19 +28,16 @@ app.get("/autocomplete", async (req, res) => {
   }
 });
 
-// Ports
+// ROUTES
 const routes = [
   { eu: "Rotterdam", fi: "Helsinki", ferry: 300 },
   { eu: "Hamburg", fi: "Turku", ferry: 280 }
 ];
 
-// ✅ MAIN CALCULATION
+// CALCULATE
 app.post("/calculate", async (req, res) => {
   const { start, end } = req.body;
-
-  if (!start || !end) {
-    return res.status(400).json({ error: "Missing start or end" });
-  }
+  if (!start || !end) return res.status(400).json({ error: "Missing input" });
 
   let results = [];
 
@@ -83,7 +75,6 @@ app.post("/calculate", async (req, res) => {
   }
 
   results.sort((a, b) => a.total - b.total);
-
   res.json(results);
 });
 
