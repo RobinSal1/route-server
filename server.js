@@ -75,7 +75,7 @@ function estimateToll(distance) {
 
 // 🔥 MAIN CALCULATION
 app.post("/calculate", async (req, res) => {
-  const { start, end, fuel, driver } = req.body;
+  const { start, end, fuel, driver, tollRate } = req.body;
 
   try {
     const routes = await getRoutes();
@@ -97,7 +97,9 @@ app.post("/calculate", async (req, res) => {
           const distance = distance1 + distance2;
           const time = time1 + time2;
 
-          const toll = estimateToll(distance);
+          const tollRate = tollRateInput || 0.12; // fallback
+
+          const toll = distance1 * tollRate; // ONLY EU LEG
 
           const fuelCost = distance * (fuel || 0.2);
           const driverCost = time * (driver || 20);
