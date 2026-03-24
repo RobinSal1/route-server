@@ -8,8 +8,8 @@ app.use(cors());
 
 const API_KEY = process.env.API_KEY;
 
-// 🔥 REPLACE WITH YOUR SHEET ID
-const SHEET_ID = "1aatEh9g41NQ-xWiOvetmrtlmSpCNiXGtD0W4JMBpHx4";
+// 🔥 PUT YOUR SHEET ID HERE
+const SHEET_ID = "PASTE_YOUR_SHEET_ID_HERE";
 const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/Sheet1`;
 
 // TEST
@@ -29,12 +29,12 @@ app.get("/autocomplete", async (req, res) => {
 
     const results = data.predictions.map(p => p.description);
     res.json(results);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Autocomplete failed" });
   }
 });
 
-// 🔥 FETCH ROUTES FROM GOOGLE SHEET
+// FETCH ROUTES FROM SHEET
 async function getRoutes() {
   const res = await fetch(SHEET_URL);
   const data = await res.json();
@@ -46,7 +46,7 @@ async function getRoutes() {
   }));
 }
 
-// 🚗 GOOGLE DIRECTIONS API
+// GOOGLE DIRECTIONS
 async function getRouteData(origin, destination) {
   const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${API_KEY}`;
 
@@ -63,17 +63,12 @@ async function getRouteData(origin, destination) {
       duration: leg.duration.value / 3600
     };
 
-  } catch (err) {
+  } catch {
     return null;
   }
 }
 
-// 🚧 TRUCK TOLL ESTIMATE
-function estimateToll(distance) {
-  return distance * 0.12;
-}
-
-// 🔥 MAIN CALCULATION
+// MAIN CALC
 app.post("/calculate", async (req, res) => {
   const { start, end, fuel, driver, tollRate } = req.body;
 
@@ -97,9 +92,8 @@ app.post("/calculate", async (req, res) => {
           const distance = distance1 + distance2;
           const time = time1 + time2;
 
-          const tollRate = tollRateInput || 0.12; // fallback
-
-          const toll = distance1 * tollRate; // ONLY EU LEG
+          // 🔥 USER CONTROLLED TOLL (EU LEG ONLY)
+          const toll = distance1 * (tollRate || 0.12);
 
           const fuelCost = distance * (fuel || 0.2);
           const driverCost = time * (driver || 20);
@@ -136,7 +130,7 @@ app.post("/calculate", async (req, res) => {
 
     res.json(results.slice(0, 3));
 
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Calculation failed" });
   }
 });
