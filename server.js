@@ -36,22 +36,26 @@ const routes = require("./routes.json");
 async function getRouteData(origin, destination) {
   const url = "https://routes.googleapis.com/directions/v2:computeRoutes";
 
-  const body = {
-    origin: {
-      location: {
-        address: origin
-      }
-    },
-    destination: {
-      location: {
-        address: destination
-      }
-    },
-    travelMode: "DRIVE",
-    routingPreference: "TRAFFIC_UNAWARE",
-    extraComputations: ["TOLLS"],
-    units: "METRIC"
-  };
+const body = {
+  origin: {
+    location: {
+      address: origin
+    }
+  },
+  destination: {
+    location: {
+      address: destination
+    }
+  },
+  travelMode: "DRIVE",
+  routingPreference: "TRAFFIC_UNAWARE",
+  extraComputations: ["TOLLS"],
+  units: "METRIC",
+
+  // 🔥 ADD THESE (CRITICAL)
+  languageCode: "en-US",
+  regionCode: "EU"
+};
 
   try {
     console.log("Routing:", origin, "→", destination);
