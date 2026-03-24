@@ -8,43 +8,29 @@ app.use(cors());
 
 const API_KEY = process.env.API_KEY;
 
-
-
-let typingTimer;
-
-function autoComplete(inputElement, listId) {
-  const value = inputElement.value;
-
-  clearTimeout(typingTimer);
-
-  if (value.length < 3) {
-    document.getElementById(listId).innerHTML = "";
-    return;
-  }
-
-  // ⏳ Show loading
-  document.getElementById(listId).innerHTML = "<div style='padding:5px;'>Loading...</div>";
-
-  typingTimer = setTimeout(() => {
-    google.script.run.withSuccessHandler(data => {
-      let html = "";
-
-      // 🔥 limit results to 5
-      data.slice(0, 5).forEach(item => {
-        html += `<div onclick="selectOption('${item}', '${inputElement.id}', '${listId}')"
-                  style="padding:8px; cursor:pointer; border-bottom:1px solid #eee;"
-                  onmouseover="this.style.background='#f5f5f5'"
-                  onmouseout="this.style.background='white'">
-                  ${item}
-                </div>`;
-      });
-
-      document.getElementById(listId).innerHTML = html;
-    }).getAutocomplete(value);
-  }, 300);
-}
+// Test route
 app.get("/", (req, res) => {
   res.send("Server works!");
+});
+
+// ✅ AUTOCOMPLETE ENDPOINT
+app.get("/autocomplete", async (req, res) => {
+  const input = req.query.input;
+
+  if (!input) return res.json([]);
+
+  try {
+    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&types=(cities)&key=${API_KEY}`;
+
+    const response = await fetch(url).then(r => r.json());
+
+    const results = response.predictions.map(p => p.description);
+
+    res.json(results);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Autocomplete failed" });
+  }
 });
 
 // Ports
@@ -53,14 +39,13 @@ const routes = [
   { eu: "Hamburg", fi: "Turku", ferry: 280 }
 ];
 
+// ✅ MAIN CALCULATION
 app.post("/calculate", async (req, res) => {
   const { start, end } = req.body;
 
   if (!start || !end) {
     return res.status(400).json({ error: "Missing start or end" });
   }
-
-  console.log("Request:", start, "→", end);
 
   let results = [];
 
@@ -74,10 +59,7 @@ app.post("/calculate", async (req, res) => {
         fetch(url2).then(r => r.json())
       ]);
 
-      if (!res1.routes.length || !res2.routes.length) {
-        console.log("No route found for:", r);
-        continue;
-      }
+      if (!res1.routes.length || !res2.routes.length) continue;
 
       const leg1 = res1.routes[0].legs[0];
       const leg2 = res2.routes[0].legs[0];
@@ -96,7 +78,7 @@ app.post("/calculate", async (req, res) => {
       });
 
     } catch (err) {
-      console.log("Error:", err);
+      console.log(err);
     }
   }
 
