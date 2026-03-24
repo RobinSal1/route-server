@@ -32,18 +32,30 @@ app.get("/autocomplete", async (req, res) => {
 // LOAD ROUTES
 const routes = require("./routes.json");
 
-// 🔥 GOOGLE ROUTES API
+// GOOGLE ROUTES API
 async function getRouteData(origin, destination) {
   const url = "https://routes.googleapis.com/directions/v2:computeRoutes";
 
   const body = {
-    origin: { address: origin },
-    destination: { address: destination },
+    origin: {
+      location: {
+        address: origin
+      }
+    },
+    destination: {
+      location: {
+        address: destination
+      }
+    },
     travelMode: "DRIVE",
-    extraComputations: ["TOLLS"]
+    routingPreference: "TRAFFIC_UNAWARE",
+    extraComputations: ["TOLLS"],
+    units: "METRIC"
   };
 
   try {
+    console.log("Routing:", origin, "→", destination);
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -55,6 +67,8 @@ async function getRouteData(origin, destination) {
 
     const data = await response.json();
 
+    console.log("API response:", JSON.stringify(data));
+
     if (!data.routes || !data.routes.length) return null;
 
     const route = data.routes[0];
@@ -62,7 +76,6 @@ async function getRouteData(origin, destination) {
     const distance = route.distanceMeters / 1000;
     const duration = parseInt(route.duration.replace("s", "")) / 3600;
 
-    // SAFE TOLL
     let toll = 0;
     const tollInfo = route.travelAdvisory?.tollInfo;
 
@@ -85,7 +98,7 @@ async function getRouteData(origin, destination) {
   }
 }
 
-// ✅ MAIN CALCULATION
+// MAIN CALCULATION
 app.post("/calculate", async (req, res) => {
   const { start, end, fuel, driver } = req.body;
 
@@ -97,11 +110,11 @@ app.post("/calculate", async (req, res) => {
     const results = await Promise.all(
       routes.map(async (r) => {
         try {
-          // ROAD LEGS ONLY
-          const leg1 = await getRouteData(start, r.eu);
-          const leg2 = await getRouteData(r.fi, end);
+          const [leg1, leg2] = await Promise.all([
+            getRouteData(start, r.eu),
+            getRouteData(r.fi, end)
+          ]);
 
-          // FALLBACK if Google fails
           const distance1 = leg1 ? leg1.distance : 0;
           const time1 = leg1 ? leg1.duration : 0;
 
@@ -116,7 +129,6 @@ app.post("/calculate", async (req, res) => {
           const fuelCost = distance * (fuel || 0.2);
           const driverCost = time * (driver || 20);
 
-          // 🚢 FERRY FROM EXCEL
           const ferryCost = r.total || r.ferry;
 
           const total = fuelCost + driverCost + ferryCost + toll;
@@ -139,11 +151,9 @@ app.post("/calculate", async (req, res) => {
 
     const filtered = results.filter(r => r);
 
-    // ✅ SORT CHEAPEST
     filtered.sort((a, b) => a.total - b.total);
 
-    // ✅ RETURN ONLY CHEAPEST
-    res.json([filtered[0]]);
+    res.json([filtered[0]]); // cheapest only
 
   } catch (err) {
     console.log("Calculation error:", err);
