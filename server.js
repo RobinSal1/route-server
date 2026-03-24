@@ -10,7 +10,7 @@ const API_KEY = process.env.API_KEY;
 
 // 🔥 REPLACE WITH YOUR SHEET ID
 const SHEET_ID = "1aatEh9g41NQ-xWiOvetmrtlmSpCNiXGtD0W4JMBpHx4";
-const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/Routes`;
+const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/Sheet1`;
 
 // TEST
 app.get("/", (req, res) => {
