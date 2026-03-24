@@ -39,7 +39,9 @@ async function getRoutes() {
   const res = await fetch(SHEET_URL);
   const data = await res.json();
 
-  return data.map(r => ({
+return data
+  .filter(r => r["EU Port"] && r["FI Port"] && r["Total"])
+  .map(r => ({
     eu: r["EU Port"],
     fi: r["FI Port"],
     ferry: parseFloat(r["Total"])
@@ -93,7 +95,9 @@ app.post("/calculate", async (req, res) => {
           const time = time1 + time2;
 
           // 🔥 USER CONTROLLED TOLL (EU LEG ONLY)
-          const toll = distance1 * (tollRate || 0.12);
+          const safeTollRate = parseFloat(tollRate);
+
+          const toll = distance1 * (isNaN(safeTollRate) ? 0.12 : safeTollRate);
 
           const fuelCost = distance * (fuel || 0.2);
           const driverCost = time * (driver || 20);
