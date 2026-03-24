@@ -1,31 +1,129 @@
-let typingTimer;
+const express = require("express");
+const fetch = require("node-fetch");
+const cors = require("cors");
 
-function autoComplete(inputElement, listId) {
-  const value = inputElement.value;
+const app = express();
+app.use(express.json());
+app.use(cors());
 
-  clearTimeout(typingTimer);
+const API_KEY = process.env.API_KEY;
 
-  if (value.length < 2) {
-    document.getElementById(listId).innerHTML = "";
-    return;
+// TEST
+app.get("/", (req, res) => {
+  res.send("Server works!");
+});
+
+// AUTOCOMPLETE
+app.get("/autocomplete", async (req, res) => {
+  const input = req.query.input;
+  if (!input) return res.json([]);
+
+  try {
+    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&types=(cities)&key=${API_KEY}`;
+    const response = await fetch(url).then(r => r.json());
+    const results = response.predictions.map(p => p.description);
+    res.json(results);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Autocomplete failed" });
   }
+});
 
-  typingTimer = setTimeout(() => {
-    google.script.run.withSuccessHandler(data => {
-      let html = "";
+// LOAD ROUTES
+const routes = require("./routes.json");
 
-      data.slice(0, 5).forEach(item => {
-        html += `
-          <div onclick="selectOption('${item}', '${inputElement.id}', '${listId}')"
-            style="padding:8px; cursor:pointer; border-bottom:1px solid #eee;"
-            onmouseover="this.style.background='#f5f5f5'"
-            onmouseout="this.style.background='white'">
-            ${item}
-          </div>
-        `;
-      });
+// GOOGLE DIRECTIONS
+async function getRouteData(origin, destination) {
+  const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${API_KEY}`;
 
-      document.getElementById(listId).innerHTML = html;
-    }).getAutocomplete(value);
-  }, 250); // smoother typing
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.routes || !data.routes.length) return null;
+
+    const leg = data.routes[0].legs[0];
+
+    return {
+      distance: leg.distance.value / 1000,
+      duration: leg.duration.value / 3600
+    };
+
+  } catch (err) {
+    return null;
+  }
 }
+
+// TOLL ESTIMATE (TRUCK)
+function estimateToll(distance) {
+  return distance * 0.15;
+}
+
+// MAIN CALC
+app.post("/calculate", async (req, res) => {
+  const { start, end, fuel, driver } = req.body;
+
+  try {
+    const results = await Promise.all(
+      routes.map(async (r) => {
+        try {
+          const [leg1, leg2] = await Promise.all([
+            getRouteData(start, r.eu),
+            getRouteData(r.fi, end)
+          ]);
+
+          const distance1 = leg1 ? leg1.distance : 0;
+          const time1 = leg1 ? leg1.duration : 0;
+
+          const distance2 = leg2 ? leg2.distance : 0;
+          const time2 = leg2 ? leg2.duration : 0;
+
+          const distance = distance1 + distance2;
+          const time = time1 + time2;
+
+          const toll = estimateToll(distance);
+
+          const fuelCost = distance * (fuel || 0.2);
+          const driverCost = time * (driver || 20);
+
+          const ferryCost = r.total || r.ferry;
+
+          const total = fuelCost + driverCost + ferryCost + toll;
+
+          return {
+            route: `${r.eu} → ${r.fi}`,
+            distance,
+            time,
+            toll,
+            ferry: ferryCost,
+            total,
+            valid: distance > 0
+          };
+
+        } catch {
+          return {
+            route: `${r.eu} → ${r.fi}`,
+            distance: 0,
+            time: 0,
+            toll: 0,
+            ferry: r.total || r.ferry,
+            total: 999999,
+            valid: false
+          };
+        }
+      })
+    );
+
+    // SORT
+    results.sort((a, b) => a.total - b.total);
+
+    // ALWAYS RETURN 3
+    res.json(results.slice(0, 3));
+
+  } catch (err) {
+    res.status(500).json({ error: "Calculation failed" });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Server running on port", PORT));
