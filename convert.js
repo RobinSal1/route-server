@@ -9,8 +9,13 @@ console.log("DEBUG:", data[0]); // 👈 keep this for now
 
 const routes = data
   .map(row => {
-    const routeText = Object.values(row)[0]; // 👈 take first column automatically
-    const ferry = Object.values(row)[1];     // 👈 second column
+    const values = Object.values(row);
+
+    const routeText = values[0];
+    const ferry = Number(values[1]) || 0;
+    const ets = Number(values[2]) || 0;
+    const baf = Number(values[3]) || 0;
+    const total = Number(values[5]) || 0;
 
     if (!routeText) return null;
 
@@ -22,10 +27,14 @@ const routes = data
     return {
       eu: eu.trim(),
       fi: fi.trim(),
-      ferry: Number(ferry) || 0
+      ferry,
+      ets,
+      baf,
+      total
     };
   })
   .filter(r => r !== null);
+
 
 fs.writeFileSync("routes.json", JSON.stringify(routes, null, 2));
 

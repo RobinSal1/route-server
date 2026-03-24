@@ -2,46 +2,73 @@
   {
     "eu": "Tallinna",
     "fi": "Helsinki",
-    "ferry": 450
+    "ferry": 450,
+    "ets": 24.5,
+    "baf": 42,
+    "total": 516.5
   },
   {
     "eu": "Gdynia",
     "fi": "Hanko",
-    "ferry": 680
+    "ferry": 680,
+    "ets": 170.8,
+    "baf": 157,
+    "total": 1007.8
   },
   {
     "eu": "Travemünde",
     "fi": "Helsnki",
-    "ferry": 950
+    "ferry": 950,
+    "ets": 221,
+    "baf": 157,
+    "total": 1328
   },
   {
     "eu": "Lübeck",
     "fi": "Hanko",
-    "ferry": 920
+    "ferry": 920,
+    "ets": 58,
+    "baf": 72,
+    "total": 1050
   },
   {
     "eu": "Antwerpen",
     "fi": "Hanko",
-    "ferry": 1200
+    "ferry": 1200,
+    "ets": 105,
+    "baf": 115,
+    "total": 1420
   },
   {
     "eu": "Santander",
     "fi": "Hanko",
-    "ferry": 1550
+    "ferry": 1550,
+    "ets": 565,
+    "baf": 165,
+    "total": 2280
   },
   {
     "eu": "Bilbao",
     "fi": "Hanko",
-    "ferry": 1550
+    "ferry": 1550,
+    "ets": 565,
+    "baf": 165,
+    "total": 2280
   },
   {
     "eu": "Stockholm",
     "fi": "Turku",
-    "ferry": 440
+    "ferry": 440,
+    "ets": 32.2,
+    "baf": 42,
+    "total": 514.2
   },
   {
     "eu": "Kapellskär",
     "fi": "Naatali",
-    "ferry": 420
+    "ferry": 420,
+    "ets": 50.4,
+    "baf": 54.6,
+    "total": 525
   }
 ]

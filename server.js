@@ -119,7 +119,9 @@ app.post("/calculate", async (req, res) => {
       const toll = (leg1.toll || 0) + (leg2.toll || 0);
 
       const fuelCost = distance * 0.2;
-      const total = fuelCost + r.ferry + toll;
+      const ferryCost = r.total || r.ferry;
+
+      const total = fuelCost + driverCost + ferryCost + toll;
 
       results.push({
         route: `${r.eu} → ${r.fi}`,
