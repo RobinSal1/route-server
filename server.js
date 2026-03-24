@@ -59,9 +59,10 @@ async function getRouteData(origin, destination) {
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": API_KEY
-      },
+  "Content-Type": "application/json",
+  "X-Goog-Api-Key": API_KEY,
+  "X-Goog-FieldMask": "routes.distanceMeters,routes.duration,routes.travelAdvisory.tollInfo"
+},
       body: JSON.stringify(body)
     });
 
