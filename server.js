@@ -32,7 +32,7 @@ app.get("/autocomplete", async (req, res) => {
 // LOAD ROUTES
 const routes = require("./routes.json");
 
-// 🔥 GOOGLE ROUTES API FUNCTION
+// 🔥 GOOGLE ROUTES API
 async function getRouteData(origin, destination) {
   const url = "https://routes.googleapis.com/directions/v2:computeRoutes";
 
@@ -62,7 +62,7 @@ async function getRouteData(origin, destination) {
     const distance = route.distanceMeters / 1000;
     const duration = parseInt(route.duration.replace("s", "")) / 3600;
 
-    // ✅ SAFE TOLL
+    // SAFE TOLL
     let toll = 0;
     const tollInfo = route.travelAdvisory?.tollInfo;
 
@@ -77,11 +77,7 @@ async function getRouteData(origin, destination) {
       }
     }
 
-    return {
-      distance,
-      duration,
-      toll
-    };
+    return { distance, duration, toll };
 
   } catch (err) {
     console.log("Route API error:", err);
@@ -99,30 +95,41 @@ app.post("/calculate", async (req, res) => {
 
   try {
     const results = await Promise.all(
-      routes.slice(0, 5).map(async (r) => {
+      routes.map(async (r) => {
         try {
-          const [leg1, leg2] = await Promise.all([
-            getRouteData(start, r.eu),
-            getRouteData(r.fi, end)
-          ]);
+          // ROAD LEGS ONLY
+          const leg1 = await getRouteData(start, r.eu);
+          const leg2 = await getRouteData(r.fi, end);
 
-          if (!leg1 || !leg2) return null;
+          // FALLBACK if Google fails
+          const distance1 = leg1 ? leg1.distance : 0;
+          const time1 = leg1 ? leg1.duration : 0;
 
-          const distance = leg1.distance + leg2.distance;
-          const time = leg1.duration + leg2.duration;
-          const toll = (leg1.toll || 0) + (leg2.toll || 0);
+          const distance2 = leg2 ? leg2.distance : 0;
+          const time2 = leg2 ? leg2.duration : 0;
+
+          const toll = (leg1?.toll || 0) + (leg2?.toll || 0);
+
+          const distance = distance1 + distance2;
+          const time = time1 + time2;
 
           const fuelCost = distance * (fuel || 0.2);
           const driverCost = time * (driver || 20);
+
+          // 🚢 FERRY FROM EXCEL
           const ferryCost = r.total || r.ferry;
+
+          const total = fuelCost + driverCost + ferryCost + toll;
 
           return {
             route: `${r.eu} → ${r.fi}`,
             distance,
             time,
             toll,
-            total: fuelCost + driverCost + ferryCost + toll
+            ferry: ferryCost,
+            total
           };
+
         } catch (err) {
           console.log("Route error:", err);
           return null;
@@ -131,9 +138,12 @@ app.post("/calculate", async (req, res) => {
     );
 
     const filtered = results.filter(r => r);
+
+    // ✅ SORT CHEAPEST
     filtered.sort((a, b) => a.total - b.total);
 
-    res.json(filtered);
+    // ✅ RETURN ONLY CHEAPEST
+    res.json([filtered[0]]);
 
   } catch (err) {
     console.log("Calculation error:", err);
