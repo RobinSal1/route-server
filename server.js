@@ -34,75 +34,37 @@ const routes = require("./routes.json");
 
 // GOOGLE ROUTES API
 async function getRouteData(origin, destination) {
-  const url = "https://routes.googleapis.com/directions/v2:computeRoutes";
-
-const body = {
-  origin: {
-    location: {
-      address: origin
-    }
-  },
-  destination: {
-    location: {
-      address: destination
-    }
-  },
-  travelMode: "DRIVE",
-  routingPreference: "TRAFFIC_UNAWARE",
-  extraComputations: ["TOLLS"],
-  units: "METRIC",
-
-  // 🔥 ADD THESE (CRITICAL)
-  languageCode: "en-US",
-  regionCode: "EU"
-};
+  const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${API_KEY}`;
 
   try {
     console.log("Routing:", origin, "→", destination);
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-  "Content-Type": "application/json",
-  "X-Goog-Api-Key": API_KEY,
-  "X-Goog-FieldMask": "routes.distanceMeters,routes.duration,routes.travelAdvisory.tollInfo"
-},
-      body: JSON.stringify(body)
-    });
-
+    const response = await fetch(url);
     const data = await response.json();
 
     console.log("API response:", JSON.stringify(data));
 
     if (!data.routes || !data.routes.length) return null;
 
-    const route = data.routes[0];
+    const leg = data.routes[0].legs[0];
 
-    const distance = route.distanceMeters / 1000;
-    const duration = parseInt(route.duration.replace("s", "")) / 3600;
+    const distance = leg.distance.value / 1000; // km
+    const duration = leg.duration.value / 3600; // hours
 
-    let toll = 0;
-    const tollInfo = route.travelAdvisory?.tollInfo;
+    // Directions API does NOT include toll price
+    const toll = 0;
 
-    if (tollInfo?.estimatedPrice?.length) {
-      const price = tollInfo.estimatedPrice[0];
-
-      const units = Number(price.units);
-      const nanos = Number(price.nanos) / 1e9;
-
-      if (!isNaN(units)) {
-        toll = units + (isNaN(nanos) ? 0 : nanos);
-      }
-    }
-
-    return { distance, duration, toll };
+    return {
+      distance,
+      duration,
+      toll
+    };
 
   } catch (err) {
     console.log("Route API error:", err);
     return null;
   }
 }
-
 // MAIN CALCULATION
 app.post("/calculate", async (req, res) => {
   const { start, end, fuel, driver } = req.body;
