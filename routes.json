@@ -1,74 +1,47 @@
 [
   {
-    "eu": "Tallinna",
-    "fi": "Helsinki",
-    "ferry": 450,
-    "ets": 24.5,
-    "baf": 42,
+    "eu": "Tallinn, Estonia",
+    "fi": "Helsinki, Finland",
     "total": 516.5
   },
   {
-    "eu": "Gdynia",
-    "fi": "Hanko",
-    "ferry": 680,
-    "ets": 170.8,
-    "baf": 157,
+    "eu": "Gdynia, Poland",
+    "fi": "Hanko, Finland",
     "total": 1007.8
   },
   {
-    "eu": "Travemünde",
-    "fi": "Helsnki",
-    "ferry": 950,
-    "ets": 221,
-    "baf": 157,
+    "eu": "Travemunde, Germany",
+    "fi": "Helsinki, Finland",
     "total": 1328
   },
   {
-    "eu": "Lübeck",
-    "fi": "Hanko",
-    "ferry": 920,
-    "ets": 58,
-    "baf": 72,
+    "eu": "Lubeck, Germany",
+    "fi": "Hanko, Finland",
     "total": 1050
   },
   {
-    "eu": "Antwerpen",
-    "fi": "Hanko",
-    "ferry": 1200,
-    "ets": 105,
-    "baf": 115,
+    "eu": "Antwerp, Belgium",
+    "fi": "Hanko, Finland",
     "total": 1420
   },
   {
-    "eu": "Santander",
-    "fi": "Hanko",
-    "ferry": 1550,
-    "ets": 565,
-    "baf": 165,
+    "eu": "Santander, Spain",
+    "fi": "Hanko, Finland",
     "total": 2280
   },
   {
-    "eu": "Bilbao",
-    "fi": "Hanko",
-    "ferry": 1550,
-    "ets": 565,
-    "baf": 165,
+    "eu": "Bilbao, Spain",
+    "fi": "Hanko, Finland",
     "total": 2280
   },
   {
-    "eu": "Stockholm",
-    "fi": "Turku",
-    "ferry": 440,
-    "ets": 32.2,
-    "baf": 42,
+    "eu": "Stockholm, Sweden",
+    "fi": "Turku, Finland",
     "total": 514.2
   },
   {
-    "eu": "Kapellskär",
-    "fi": "Naatali",
-    "ferry": 420,
-    "ets": 50.4,
-    "baf": 54.6,
+    "eu": "Kapellskar, Sweden",
+    "fi": "Naantali, Finland",
     "total": 525
   }
 ]
