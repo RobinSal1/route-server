@@ -65,16 +65,19 @@ async function getRouteData(origin, destination) {
   const duration = parseInt(route.duration.replace("s", "")) / 3600;
 
   // 🔥 Extract toll
-  let toll = 0;
-  const tollInfo = route.travelAdvisory?.tollInfo;
+let toll = 0;
 
-  if (tollInfo?.estimatedPrice?.length) {
-    toll = parseFloat(tollInfo.estimatedPrice[0].units || 0);
+const tollInfo = route.travelAdvisory?.tollInfo;
+
+if (tollInfo?.estimatedPrice?.length) {
+  const price = tollInfo.estimatedPrice[0];
+
+  if (price.units) {
+    toll = parseFloat(price.units);
+  } else {
+    toll = 0;
   }
-
-  return { distance, duration, toll };
 }
-
 // CALCULATE ROUTE
 app.post("/calculate", async (req, res) => {
   const { start, end } = req.body;
