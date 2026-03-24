@@ -8,6 +8,29 @@ app.use(cors());
 
 const API_KEY = process.env.API_KEY;
 
+
+app.get("/autocomplete", async (req, res) => {
+  const input = req.query.input;
+
+  if (!input) {
+    return res.json([]);
+  }
+
+  try {
+    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&types=(cities)&key=${API_KEY}`;
+
+    const response = await fetch(url).then(r => r.json());
+
+    const results = response.predictions.map(p => p.description);
+
+    res.json(results);
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Autocomplete failed" });
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("Server works!");
 });
