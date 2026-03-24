@@ -9,6 +9,7 @@ app.use(cors());
 const API_KEY = process.env.API_KEY;
 
 
+
 let typingTimer;
 
 function autoComplete(inputElement, listId) {
@@ -21,22 +22,26 @@ function autoComplete(inputElement, listId) {
     return;
   }
 
+  // ⏳ Show loading
+  document.getElementById(listId).innerHTML = "<div style='padding:5px;'>Loading...</div>";
+
   typingTimer = setTimeout(() => {
     google.script.run.withSuccessHandler(data => {
       let html = "";
 
-      data.forEach(item => {
+      // 🔥 limit results to 5
+      data.slice(0, 5).forEach(item => {
         html += `<div onclick="selectOption('${item}', '${inputElement.id}', '${listId}')"
-                  style="padding:6px; cursor:pointer; border-bottom:1px solid #eee;"
-                  onmouseover="this.style.background='#f0f0f0'"
-                  onmouseout="this.style.background='white'"
+                  style="padding:8px; cursor:pointer; border-bottom:1px solid #eee;"
+                  onmouseover="this.style.background='#f5f5f5'"
+                  onmouseout="this.style.background='white'">
                   ${item}
                 </div>`;
       });
 
       document.getElementById(listId).innerHTML = html;
     }).getAutocomplete(value);
-  }, 300); // ⏱ wait 300ms after typing stops
+  }, 300);
 }
 app.get("/", (req, res) => {
   res.send("Server works!");
