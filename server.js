@@ -29,10 +29,8 @@ app.get("/autocomplete", async (req, res) => {
   }
 });
 
-
+// LOAD ROUTES
 const routes = require("./routes.json");
-
-
 
 // 🔥 GOOGLE ROUTES API FUNCTION
 async function getRouteData(origin, destination) {
@@ -64,12 +62,11 @@ async function getRouteData(origin, destination) {
     const distance = route.distanceMeters / 1000;
     const duration = parseInt(route.duration.replace("s", "")) / 3600;
 
-    // ✅ BULLETPROOF TOLL HANDLING
+    // ✅ SAFE TOLL
     let toll = 0;
-
     const tollInfo = route.travelAdvisory?.tollInfo;
 
-    if (tollInfo && tollInfo.estimatedPrice && tollInfo.estimatedPrice.length > 0) {
+    if (tollInfo?.estimatedPrice?.length) {
       const price = tollInfo.estimatedPrice[0];
 
       const units = Number(price.units);
@@ -94,51 +91,54 @@ async function getRouteData(origin, destination) {
 
 // ✅ MAIN CALCULATION
 app.post("/calculate", async (req, res) => {
-  const { start, end } = req.body;
+  const { start, end, fuel, driver } = req.body;
 
   if (!start || !end) {
     return res.status(400).json({ error: "Missing start or end" });
   }
 
-  let results = [];
+  try {
+    const results = await Promise.all(
+      routes.slice(0, 5).map(async (r) => {
+        try {
+          const [leg1, leg2] = await Promise.all([
+            getRouteData(start, r.eu),
+            getRouteData(r.fi, end)
+          ]);
 
-  for (const r of routes) {
-    try {
-      // 🔥 PARALLEL CALLS (FAST)
-      const [leg1, leg2] = await Promise.all([
-        getRouteData(start, r.eu),
-        getRouteData(r.fi, end)
-      ]);
+          if (!leg1 || !leg2) return null;
 
-      if (!leg1 || !leg2) continue;
+          const distance = leg1.distance + leg2.distance;
+          const time = leg1.duration + leg2.duration;
+          const toll = (leg1.toll || 0) + (leg2.toll || 0);
 
-      const distance = leg1.distance + leg2.distance;
-      const time = leg1.duration + leg2.duration;
+          const fuelCost = distance * (fuel || 0.2);
+          const driverCost = time * (driver || 20);
+          const ferryCost = r.total || r.ferry;
 
-      // ✅ SAFE toll sum
-      const toll = (leg1.toll || 0) + (leg2.toll || 0);
+          return {
+            route: `${r.eu} → ${r.fi}`,
+            distance,
+            time,
+            toll,
+            total: fuelCost + driverCost + ferryCost + toll
+          };
+        } catch (err) {
+          console.log("Route error:", err);
+          return null;
+        }
+      })
+    );
 
-      const fuelCost = distance * 0.2;
-      const ferryCost = r.total || r.ferry;
+    const filtered = results.filter(r => r);
+    filtered.sort((a, b) => a.total - b.total);
 
-      const total = fuelCost + driverCost + ferryCost + toll;
+    res.json(filtered);
 
-      results.push({
-        route: `${r.eu} → ${r.fi}`,
-        distance,
-        time,
-        toll,
-        total
-      });
-
-    } catch (err) {
-      console.log("Calculation error:", err);
-    }
+  } catch (err) {
+    console.log("Calculation error:", err);
+    res.status(500).json({ error: "Calculation failed" });
   }
-
-  results.sort((a, b) => a.total - b.total);
-
-  res.json(results);
 });
 
 // START SERVER
