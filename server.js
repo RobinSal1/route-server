@@ -9,28 +9,35 @@ app.use(cors());
 const API_KEY = process.env.API_KEY;
 
 
-app.get("/autocomplete", async (req, res) => {
-  const input = req.query.input;
+let typingTimer;
 
-  if (!input) {
-    return res.json([]);
+function autoComplete(inputElement, listId) {
+  const value = inputElement.value;
+
+  clearTimeout(typingTimer);
+
+  if (value.length < 3) {
+    document.getElementById(listId).innerHTML = "";
+    return;
   }
 
-  try {
-    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&types=(cities)&key=${API_KEY}`;
+  typingTimer = setTimeout(() => {
+    google.script.run.withSuccessHandler(data => {
+      let html = "";
 
-    const response = await fetch(url).then(r => r.json());
+      data.forEach(item => {
+        html += `<div onclick="selectOption('${item}', '${inputElement.id}', '${listId}')"
+                  style="padding:6px; cursor:pointer; border-bottom:1px solid #eee;"
+                  onmouseover="this.style.background='#f0f0f0'"
+                  onmouseout="this.style.background='white'"
+                  ${item}
+                </div>`;
+      });
 
-    const results = response.predictions.map(p => p.description);
-
-    res.json(results);
-
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Autocomplete failed" });
-  }
-});
-
+      document.getElementById(listId).innerHTML = html;
+    }).getAutocomplete(value);
+  }, 300); // ⏱ wait 300ms after typing stops
+}
 app.get("/", (req, res) => {
   res.send("Server works!");
 });
