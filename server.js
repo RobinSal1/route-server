@@ -72,11 +72,10 @@ const tollInfo = route.travelAdvisory?.tollInfo;
 if (tollInfo?.estimatedPrice?.length) {
   const price = tollInfo.estimatedPrice[0];
 
-  if (price.units) {
-    toll = parseFloat(price.units);
-  } else {
-    toll = 0;
-  }
+  const units = parseFloat(price.units || 0);
+  const nanos = (price.nanos || 0) / 1e9;
+
+  toll = units + nanos;
 }
 // CALCULATE ROUTE
 app.post("/calculate", async (req, res) => {
