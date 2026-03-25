@@ -162,43 +162,45 @@ app.post("/calculate", async (req, res) => {
 
     const selectedPorts = ports || [];
 
-    let finalRoutes = [];
+results.sort((a, b) => a.total - b.total);
 
-    // 🎯 0 SELECTED → TOP 3
-    if (selectedPorts.length === 0) {
-      finalRoutes = results.slice(0, 3);
-    }
+let finalRoutes = [];
 
-    // 🎯 FIND MATCHES
-    const selectedMatches = results.filter(r =>
-      selectedPorts.some(p =>
-        r.route.toLowerCase().includes(p.toLowerCase())
-      )
-    );
+// 🔍 FIND MATCHES
+const selectedMatches = results.filter(r =>
+  selectedPorts.some(p =>
+    r.route.toLowerCase().includes(p.toLowerCase())
+  )
+);
 
-    // 🎯 1 SELECTED
-    else if (selectedPorts.length === 1) {
-      finalRoutes = [
-        results[0],
-        ...selectedMatches,
-        ...results.filter(r => !selectedMatches.includes(r))
-      ].slice(0, 3);
-    }
+// ✅ 0 SELECTED
+if (selectedPorts.length === 0) {
+  finalRoutes = results.slice(0, 3);
+}
 
-    // 🎯 2 SELECTED
-    else if (selectedPorts.length === 2) {
-      finalRoutes = [
-        ...selectedMatches,
-        results[0]
-      ].slice(0, 3);
-    }
+// ✅ 1 SELECTED
+else if (selectedPorts.length === 1) {
+  finalRoutes = [
+    results[0],
+    ...selectedMatches,
+    ...results.filter(r => !selectedMatches.includes(r))
+  ].slice(0, 3);
+}
 
-    // 🎯 3 SELECTED
-    else if (selectedPorts.length === 3) {
-      finalRoutes = selectedMatches.slice(0, 3);
-    }
+// ✅ 2 SELECTED
+else if (selectedPorts.length === 2) {
+  finalRoutes = [
+    ...selectedMatches,
+    results[0]
+  ].slice(0, 3);
+}
 
-    res.json(finalRoutes);
+// ✅ 3 SELECTED
+else if (selectedPorts.length === 3) {
+  finalRoutes = selectedMatches.slice(0, 3);
+}
+
+res.json(finalRoutes);
 
   } catch (err) {
     console.log("FATAL:", err);
