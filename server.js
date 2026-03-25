@@ -8,7 +8,6 @@ app.use(cors());
 
 const API_KEY = process.env.API_KEY;
 
-// 🔥 YOUR SHEET
 const SHEET_ID = "1aatEh9g41NQ-xWiOvetmrtlmSpCNiXGtD0W4JMBpHx4";
 const SHEET_URL = `https://opensheet.elk.sh/${SHEET_ID}/Sheet1`;
 
@@ -17,7 +16,7 @@ app.get("/", (req, res) => {
   res.send("Server works!");
 });
 
-// AUTOCOMPLETE
+// AUTOCOMPLETE (EU ONLY)
 app.get("/autocomplete", async (req, res) => {
   const input = req.query.input;
   if (!input) return res.json([]);
@@ -31,9 +30,7 @@ app.get("/autocomplete", async (req, res) => {
       "Finland","Sweden","Norway","Denmark","Germany","France","Spain",
       "Italy","Netherlands","Belgium","Poland","Estonia","Latvia","Lithuania",
       "Czechia","Austria","Switzerland","Portugal","Slovakia","Hungary",
-      "Slovenia","Croatia","Bosnia and Herzegovina","Serbia","Montenegro",
-      "Albania","North Macedonia","Greece","Bulgaria","Romania","Moldova",
-      "Ukraine","Belarus","Ireland","United Kingdom","Iceland","Luxembourg"
+      "Slovenia","Croatia","Greece","Romania","Bulgaria","Ireland","UK"
     ];
 
     const results = data.predictions
@@ -47,35 +44,29 @@ app.get("/autocomplete", async (req, res) => {
   }
 });
 
-// SAFE SHEET FETCH
+// GET ROUTES
 async function getRoutes() {
-  try {
-    const res = await fetch(SHEET_URL);
-    const data = await res.json();
+  const res = await fetch(SHEET_URL);
+  const data = await res.json();
 
-    return data
-      .filter(r => r["EU Port"] && r["FI Port"] && r["Total"])
-      .map(r => ({
-        eu: r["EU Port"],
-        fi: r["FI Port"],
-        ferry: parseFloat(r["Total"])
-      }));
-
-  } catch (err) {
-    console.log("Sheet error:", err);
-    return [];
-  }
+  return data
+    .filter(r => r["EU Port"] && r["FI Port"] && r["Total"])
+    .map(r => ({
+      eu: r["EU Port"],
+      fi: r["FI Port"],
+      ferry: parseFloat(r["Total"])
+    }));
 }
 
-// GOOGLE DIRECTIONS
+// GOOGLE ROUTE
 async function getRouteData(origin, destination) {
   try {
     const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${API_KEY}`;
 
-    const response = await fetch(url);
-    const data = await response.json();
+    const res = await fetch(url);
+    const data = await res.json();
 
-    if (!data.routes || !data.routes.length) return null;
+    if (!data.routes.length) return null;
 
     const leg = data.routes[0].legs[0];
 
@@ -89,66 +80,73 @@ async function getRouteData(origin, destination) {
   }
 }
 
-// 🔥 MAIN CALC (SAFE VERSION)
+// CALCULATE
 app.post("/calculate", async (req, res) => {
   try {
-    const { start, end, fuel, driver, tollRate } = req.body;
+    const { start, end, fuel, driver, tollRate, port } = req.body;
 
     const routes = await getRoutes();
-
-    if (!routes.length) {
-      return res.json([]);
-    }
-
-    const results = [];
+    let results = [];
 
     for (const r of routes) {
-      try {
-        const leg1 = await getRouteData(start, r.eu);
-        const leg2 = await getRouteData(r.fi, end);
+      const leg1 = await getRouteData(start, r.eu);
+      const leg2 = await getRouteData(r.fi, end);
 
-        const distance1 = leg1 ? leg1.distance : 0;
-        const time1 = leg1 ? leg1.duration : 0;
+      const distance1 = leg1 ? leg1.distance : 0;
+      const distance2 = leg2 ? leg2.distance : 0;
 
-        const distance2 = leg2 ? leg2.distance : 0;
-        const time2 = leg2 ? leg2.duration : 0;
+      const time1 = leg1 ? leg1.duration : 0;
+      const time2 = leg2 ? leg2.duration : 0;
 
-        const distance = distance1 + distance2;
-        const time = time1 + time2;
+      const distance = distance1 + distance2;
+      const time = time1 + time2;
 
-        const safeTollRate = parseFloat(tollRate);
-        const toll = distance1 * (isNaN(safeTollRate) ? 0.12 : safeTollRate);
+      const toll = distance1 * (parseFloat(tollRate) || 0.12);
+      const fuelCost = distance * (fuel || 0.2);
+      const driverCost = time * (driver || 20);
 
-        const fuelCost = distance * (fuel || 0.2);
-        const driverCost = time * (driver || 20);
+      const total = fuelCost + driverCost + toll + r.ferry;
 
-        const total = fuelCost + driverCost + r.ferry + toll;
-
-        results.push({
-          route: `${r.eu} → ${r.fi}`,
-          distance,
-          time,
-          toll,
-          ferry: r.ferry,
-          total,
-          valid: distance > 0
-        });
-
-      } catch (err) {
-        console.log("Route error:", err);
-      }
+      results.push({
+        route: `${r.eu} → ${r.fi}`,
+        distance,
+        time,
+        toll,
+        ferry: r.ferry,
+        total
+      });
     }
 
     results.sort((a, b) => a.total - b.total);
 
-    res.json(results.slice(0, 3));
+    const best = results[0];
+
+    let selected = null;
+    if (port) {
+      selected = results.find(r =>
+        r.route.toLowerCase().includes(port.toLowerCase())
+      );
+    }
+
+    let finalRoutes = [best];
+
+    if (selected && selected.route !== best.route) {
+      finalRoutes.push(selected);
+    }
+
+    for (let r of results) {
+      if (finalRoutes.length >= 3) break;
+      if (!finalRoutes.find(fr => fr.route === r.route)) {
+        finalRoutes.push(r);
+      }
+    }
+
+    res.json(finalRoutes);
 
   } catch (err) {
-    console.log("FATAL:", err);
-    res.json([]); // NEVER BREAK UI
+    console.log(err);
+    res.json([]);
   }
 });
 
-// START SERVER
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server running on port", PORT));
+app.listen(3000, () => console.log("Server running"));
