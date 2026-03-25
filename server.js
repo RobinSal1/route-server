@@ -27,8 +27,21 @@ app.get("/autocomplete", async (req, res) => {
     const response = await fetch(url);
     const data = await response.json();
 
-    const results = data.predictions.map(p => p.description);
-    res.json(results);
+    const europe = [
+      "Finland","Sweden","Norway","Denmark","Germany","France","Spain",
+      "Italy","Netherlands","Belgium","Poland","Estonia","Latvia","Lithuania",
+      "Czechia","Austria","Switzerland","Portugal","Slovakia","Hungary",
+      "Slovenia","Croatia","Bosnia and Herzegovina","Serbia","Montenegro",
+      "Albania","North Macedonia","Greece","Bulgaria","Romania","Moldova",
+      "Ukraine","Belarus","Ireland","United Kingdom","Iceland","Luxembourg"
+    ];
+
+    const results = data.predictions
+      .map(p => p.description)
+      .filter(place => europe.some(c => place.includes(c)));
+
+    res.json(results.slice(0, 5));
+
   } catch {
     res.json([]);
   }
